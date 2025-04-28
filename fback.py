@@ -24,7 +24,7 @@ BANNER = '''
 class FBack:
     def __init__(self):
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
-        self.patterns_path = os.path.join(self.script_dir, "pattern.json")
+        self.patterns_path = os.path.join(self.script_dir, "patterns.json")
         self.extensions_path = os.path.join(self.script_dir, "extensions.json")
         
         self.backup_extensions = [
@@ -41,6 +41,39 @@ class FBack:
             "web", "fullbackup", "backup", "data", "site", "assets", 
             "logs", "web", "debug", "install"
         ]
+
+        self.default_patterns = {
+            "patterns": [
+                "$domain_name.$ext",
+                "$full_domain.$ext",
+                "$subdomain.$domain_name.$ext",
+                "$full_domain$num.$ext",
+                "$domain_name$num.$ext",
+                "$subdomain.$ext",
+                "$file_name.$ext",
+                "$file_name~",
+                "$file_name.$num",
+                "$file_name.$ext.$num",
+                "$full_path.$ext",
+                ".$file_name",
+                ".$file_name.$num",
+                ".$file_name.$ext.$num",
+                ".$domain_name.$ext",
+                ".$file_name.$ext",
+                "$full_path~",
+                "$path/.$file_name.$ext",
+                "$word.$ext",
+                "$path/$word.$ext",
+                "$path/$word"
+            ],
+            "date-formats": [
+                "$domain_name.%y.$ext",
+                "$domain_name.%y-%m-%d.$ext",
+                "$full_domain.%y-%m-%d.$ext",
+                "$full_domain.%y%m%d.$ext",
+                "$path/%y-%m-%d.$ext"
+            ]
+        }
 
     def extract_url_parts(self, url: str) -> Dict[str, str]:
         """Parse URL into components using tldextract for better domain parsing"""
@@ -184,6 +217,20 @@ class FBack:
         else:
             raise ValueError("Invalid input format. Use 'dd-dd' or 'dd,dd'.")
 
+    def load_patterns(self, pattern_file=None):
+        """Load patterns from a file or use default patterns."""
+        if pattern_file and os.path.exists(pattern_file):
+            try:
+                with open(pattern_file, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                print(f"Error: Invalid JSON in pattern file {pattern_file}")
+                return self.default_patterns
+            except Exception as e:
+                print(f"Error loading pattern file: {e}")
+                return self.default_patterns
+        return self.default_patterns
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fback is a fast and dynamic tool to generate wordlist to find backup files.",
@@ -192,7 +239,7 @@ def main():
     
     # Input options
     INPUT = parser.add_argument_group('Flags:\n INPUT')
-    INPUT.add_argument('-p', '-pattern', dest='pattern_file', default=None, help='Pattern File Name (default "pattern.json")')
+    INPUT.add_argument('-p', '-pattern', dest='pattern_file', default=None, help='Pattern File Name (default "patterns.json")')
     INPUT.add_argument('-e', '-extensions', dest='extensions_file', default=None, help='Input file containing list of extensions with levels (default "extensions.json")')
     INPUT.add_argument('-o', '-output', dest='output_file', default=None, help='Name of the output file')
     
